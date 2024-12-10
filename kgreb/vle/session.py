@@ -1,21 +1,26 @@
 from __future__ import annotations
 
 import requests
-from beautifulprint import bprint
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse, parse_qs
 
-from . import file
+from . import file, user
 from ..util import commons
+
 
 
 class Session:
     def __init__(self, moodle: str):
         self.cookies = {"MoodleSession": moodle}
         self.headers = commons.headers.copy()
-        self._sesskey = None
-        self._file_client_id = None
-        self._file_item_id = None
+
+        self._sesskey: str | None = None
+        self._file_client_id: str | None = None
+        self._file_item_id: str | None = None
+        self._user_id: int | None = None
+
         self.assert_login()
+
 
     # --- Session/auth related methods ---
     @property
@@ -76,8 +81,28 @@ class Session:
                 return username
         return None
 
+    @property
+    def user_id(self):
+        if self._user_id is None:
+            response = requests.get("https://vle.kegs.org.uk/", headers=self.headers, cookies=self.cookies)
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            url = soup.find("a", {"title": "View profile"}) \
+                .attrs["href"]
+
+            parsed = parse_qs(urlparse(url).query)
+            self._user_id = int(parsed.get("id")[0])
+
+        return self._user_id
+
     def assert_login(self):
         assert self.username
+
+    # --- Connecting ---
+    def connect_user(self, _id: int) -> user.User:
+        ret = user.User(_id, _session=self)
+        ret.update_from_id()
+        return ret
 
     # --- Private Files ---
     def _file_data(self, fp: str) -> dict:
@@ -101,42 +126,6 @@ class Session:
 
     @property
     def files(self):
-        """gggg
-        ... test
-        """
-        """
-        # Old bs4 powered file getter
-        text = requests.get("https://vle.kegs.org.uk/user/files.php",
-                            cookies=self.cookies, headers=self.headers).text
-        soup = BeautifulSoup(text, "html.parser")
-
-        data = []
-        for script in soup.find_all("script"):
-            # Unfortunately, we have to search JavaScript to find the file data
-            script_text = script.text
-            # We can do a preliminary search of the JavaScript
-            if r"https:\/\/vle.kegs.org.uk\/draftfile.php\/" in script_text:
-                i = script_text.find("[{\"filename\":\"")
-                if i > -1:
-                    # What's worse, is that we have to make a special function to read JSON until its natural end
-                    data = commons.consume_json(script_text, i)
-
-        files = []
-        for file_dict in data:
-            files.append(file.File(
-                file_dict["filename"],
-                file_dict["size"],
-                file_dict["author"],
-                file_dict["license"],
-                file_dict["datemodified"],
-                file_dict["datecreated"],
-                file_dict["url"],
-                file_dict["icon"],
-                file_dict["thumbnail"],
-
-                self
-            ))
-        return files"""
         return self.files_in_dir('/')
 
     def add_file(self, title: str, data: bytes, author: str = '', _license: str = "unknown", fp: str = '/'):
@@ -160,6 +149,9 @@ class Session:
                       cookies=self.cookies, headers=self.headers)
 
         # Save changes
+        self.file_save_changes()
+
+    def file_save_changes(self):
         requests.post("https://vle.kegs.org.uk/user/files.php",
                       data={"returnurl": "https://vle.kegs.org.uk/user/files.php",
 
