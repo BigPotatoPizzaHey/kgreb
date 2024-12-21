@@ -3,7 +3,6 @@ from __future__ import annotations
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime
 
-import dateparser
 import requests
 import dateparser
 from dataclasses import dataclass, field
