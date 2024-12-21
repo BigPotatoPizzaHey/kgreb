@@ -3,6 +3,7 @@ from __future__ import annotations
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime
 
+import dateparser
 import requests
 import dateparser
 from dataclasses import dataclass, field
@@ -13,7 +14,45 @@ from . import session, user
 
 @dataclass(init=True, repr=True)
 class Post:
+    id: int = None
+    """Actually the integer in the url fragment that links to this post, which is attached to the discussion link"""
     creator: user.User = None
+    date: datetime = None
+    title: str = None
+    content: str = field(repr=False, default=None)
+
+    _discussion: Discussion = None
+    _session: session.Session = field(repr=False, default=None)
+
+    def update_from_html(self, elem: PageElement):
+        # --- Data from the <header> tag
+        header = elem.find("header")
+        hdata = header.find("div", {"class": "flex-column"})
+
+        self.title = hdata.find("h3").text
+
+        user_anchor = hdata.find("a")
+        user_url = user_anchor.attrs.get("href")
+        uid = int(
+            parse_qs(
+                urlparse(user_url).query
+            ).get("id")[0]
+        )
+
+        self.creator = self._session.connect_user(uid)
+        # We can actually provide the name of the creator, even if other data is inaccessible
+        self.creator.name = user_anchor.text
+
+        self.date = dateparser.parse(
+            header.find("time").text
+        )
+
+        # Other data
+        permalink = elem.find("a", {"title": "Permanent link to this post"}).attrs.get("href")
+        parse = urlparse(permalink)
+        self.id = int(parse.fragment[1:])
+
+        self.content = str(elem.find("div", {"class": "post-content-container"}))
 
 
 @dataclass(init=True, repr=True)
@@ -27,8 +66,11 @@ class Discussion:
     # last_post: Post = None
     reply_count: int = None
 
+    _forum: Forum = field(repr=False, default=None)
     _session: session.Session = field(repr=False, default=None)
     _top_post: Post = field(repr=False, default=None)
+
+    posts: list[Post] = field(repr=False, default_factory=lambda: [])
 
     def update_from_forum_html(self, elem: PageElement):
         for i, item in enumerate(elem.find_all("td")):
@@ -66,6 +108,29 @@ class Discussion:
             else:
                 break
 
+    def update(self):
+        response = requests.get("https://vle.kegs.org.uk/mod/forum/discuss.php",
+                                params={
+                                    "d": self.id,
+                                    "mode": 1
+                                }, headers=self._session.headers, cookies=self._session.cookies)
+
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        self.name = soup.find("h3", {"class": "discussionname"}).text
+        core_attrs = {"data-region-content": "forum-post-core"}
+
+        post_htmls = soup.find_all("div", core_attrs)
+        top_post_html = soup.find("div", {"class": "firstpost"}).find("div", core_attrs)
+
+        self._top_post = Post(_discussion=self, _session=self._session)
+        self._top_post.update_from_html(top_post_html)
+
+        self.posts = []
+        for post_html in post_htmls:
+            self.posts.append(Post(_discussion=self, _session=self._session))
+            self.posts[-1].update_from_html(post_html)
+
     @property
     def url(self):
         return f"https://vle.kegs.org.uk/mod/forum/discuss.php?d={self.id}"
@@ -73,7 +138,8 @@ class Discussion:
     @property
     def top_post(self) -> Post:
         if not self._top_post:
-            ...
+            self.update()
+
         return self._top_post
 
 
@@ -85,7 +151,7 @@ class Forum:
     description: str = None
     contents: list[Discussion] = None
 
-    _session: session.Session = None
+    _session: session.Session = field(repr=False, default=None)
 
     def update_by_id(self):
         response = requests.get("https://vle.kegs.org.uk/mod/forum/view.php",
@@ -115,7 +181,8 @@ class Forum:
                             # List of discussions
                             for discuss_elem in tpart.children:
                                 if not isinstance(discuss_elem, NavigableString):
-                                    discussion = Discussion()
+                                    discussion = Discussion(_forum=self, _session=self._session)
                                     discussion.update_from_forum_html(discuss_elem)
                                     discussions.append(discussion)
+
                             self.contents = discussions

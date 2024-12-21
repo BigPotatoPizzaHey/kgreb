@@ -4,9 +4,9 @@ import requests
 from bs4 import BeautifulSoup
 from typing import Final
 from dataclasses import dataclass
+import warnings
 
 from . import session
-from ..util import exceptions
 
 DELETED_USER: Final[str] = "This user account has been deleted"
 INVALID_USER: Final[str] = "Invalid user"
@@ -47,13 +47,13 @@ class User:
         soup = BeautifulSoup(text, "html.parser")
 
         if DELETED_USER in text:
-            raise exceptions.DeletedUser(f"User id {self.id} is deleted!")
+            warnings.warn(f"User id {self.id} is deleted!")
 
         elif INVALID_USER in text:
-            raise exceptions.InvalidUser(f"User id {self.id} is invalid!")
+            warnings.warn(f"User id {self.id} is invalid!")
 
         elif FORBIDDEN_USER in text:
-            raise exceptions.ForbiddenUser(f"User id {self.id} is forbidden!")
+            warnings.warn(f"User id {self.id} is forbidden!")
 
         else:
             # Get user's name
