@@ -4,7 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, parse_qs
 
-from . import file, user
+from . import file, user, forum
 from ..util import commons
 
 
@@ -102,6 +102,11 @@ class Session:
     def connect_user(self, _id: int) -> user.User:
         ret = user.User(_id, _session=self)
         ret.update_from_id()
+        return ret
+
+    def connect_forum(self, _id: int) -> forum.Forum:
+        ret = forum.Forum(_id, _session=self)
+        ret.update_by_id()
         return ret
 
     # --- Private Files ---

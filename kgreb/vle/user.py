@@ -36,7 +36,7 @@ class User:
     _session: session.Session = None
 
     @property
-    def has_default_image(self):
+    def has_default_image(self) -> bool:
         return self.image_url == "https://vle.kegs.org.uk/theme/image.php/trema/core/1585328846/u/f1"
 
     def update_from_id(self):
