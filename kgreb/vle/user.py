@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import requests
+import dateparser
 from bs4 import BeautifulSoup
 from typing import Final
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import warnings
+from datetime import datetime
 
 from . import session
 
@@ -18,22 +20,22 @@ class User:
     id: int
 
     name: str = None
-    email: str = None
-    image_url: str = None
+    email: str = field(repr=False, default=None)
+    image_url: str = field(repr=False, default=None)
 
-    country: str = None
-    city: str = None
-    web_page: str = None
+    country: str = field(repr=False, default=None)
+    city: str = field(repr=False, default=None)
+    web_page: str = field(repr=False, default=None)
 
-    interests: list = None
-    courses: list = None
+    interests: list = field(repr=False, default=None)
+    courses: list = field(repr=False, default=None)
 
-    first_access: str = None
-    last_access: str = None
+    first_access: datetime = field(repr=False, default=None)
+    last_access: datetime = field(repr=False, default=None)
 
-    description: str = None
+    description: str = field(repr=False, default=None)
 
-    _session: session.Session = None
+    _session: session.Session = field(repr=False, default=None)
 
     @property
     def has_default_image(self) -> bool:
@@ -124,7 +126,10 @@ class User:
 
                 elif category_name == "Login activity":
                     for i, activity in enumerate(category.find_all("dd")):
+                        date_str = activity.contents[0]
+                        date_str = date_str[:date_str.find('(')]
+
                         if i == 0:
-                            self.first_access = activity.contents[0]
+                            self.first_access = dateparser.parse(date_str)
                         else:
-                            self.last_access = activity.contents[0]
+                            self.last_access = dateparser.parse(date_str)

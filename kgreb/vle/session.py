@@ -18,6 +18,7 @@ class Session:
         self._file_client_id: str | None = None
         self._file_item_id: str | None = None
         self._user_id: int | None = None
+        self._user: user.User | None = None
 
         self.assert_login()
 
@@ -57,6 +58,13 @@ class Session:
                 self._file_client_id = div.attrs["id"].split("filemanager-")[1]
 
         return self._file_client_id
+
+    @property
+    def connected_user(self) -> user.User:
+        if not self._user:
+            self._user = self.connect_user(self.user_id)
+
+        return self._user
 
     @property
     def file_item_id(self):
