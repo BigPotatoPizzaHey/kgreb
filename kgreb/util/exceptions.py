@@ -7,3 +7,5 @@ class UnclosedJSONError(Exception):
 class NotFound(Exception):
     pass
 
+class Unauthorised(Exception):
+    pass

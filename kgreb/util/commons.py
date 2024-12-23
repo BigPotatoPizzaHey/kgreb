@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from typing import Any, Final
 
 from bs4 import BeautifulSoup
@@ -13,11 +14,19 @@ headers = {
 }
 
 
-def webscrape_value(raw, text_before, text_after, cls: type = str, i1: int = 1, i2: int = 0) -> int | Any:
+def webscrape_value(raw, text_before, text_after, cls: type = str, i1: int = 1, i2: int = 0) -> str | Any:
     return cls(
         raw.split(text_before)[i1] \
             .split(text_after)[i2]
     )
+
+
+def webscrape_section(raw: str, before: str | int = '', after: str | int = '', cls: type = str) -> str | Any:
+    def _toint(val: str | int) -> int:
+        return val if isinstance(val, int) else len(val)
+
+    before, after = _toint(before), _toint(after)
+    return cls(raw[before:-after])
 
 
 def _read_json_number(string: str) -> float | int:
@@ -121,7 +130,8 @@ def consume_json(string: str, i: int = 0) -> str | float | int | dict | list | b
     raise exceptions.UnclosedJSONError(f"Unclosed JSON string, read {json_text}")
 
 
-def generate_page_range(limit: int, offset: int, items_per_page: int, starting_page: int = 1) -> tuple[range, list[int]]:
+def generate_page_range(limit: int, offset: int, items_per_page: int, starting_page: int = 1) -> tuple[
+    range, list[int]]:
     """
     Returns a page range (and first indexes per page) generated from a page range
     :param limit: How many items to reach up to
@@ -155,9 +165,22 @@ def generate_page_range(limit: int, offset: int, items_per_page: int, starting_p
         [items_per_page * (i - starting_page) for i in page_range]
     )
 
+
 def find_links(soup: BeautifulSoup) -> list[str]:
     ret = []
     for elem in soup.find_all("a"):
         if "href" in elem.attrs:
             ret.append(str(elem.attrs["href"]))
     return ret
+
+
+def to_dformat(date: datetime) -> str:
+    """
+    Convert a datetime to the format dd-mm-yyyy
+    """
+
+    def i2zs(v: int):
+        """convert an integer to a fixed 2-digit string"""
+        return str(v).zfill(2)
+
+    return f"{i2zs(date.month)}-{i2zs(date.day)}-{date.year}"

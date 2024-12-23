@@ -2,6 +2,7 @@ import requests
 from dataclasses import dataclass, field
 from datetime import datetime
 import dateparser
+import mimetypes
 
 from urllib.parse import urlparse, parse_qs
 from bs4 import BeautifulSoup, SoupStrainer
@@ -15,6 +16,10 @@ class Asset:
     name: str = None
     mime: str = None
     last_modified: datetime = None
+
+    @property
+    def ext(self):
+        return mimetypes.guess_extension(self.mime)
 
 
 def download_asset_by_id(_id: int):
