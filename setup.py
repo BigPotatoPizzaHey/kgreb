@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='kgreb',
-    version='v0.0.0',
+    version='v0.0.1',
     packages=['kgreb', 'kgreb.vle', 'kgreb.util'],
     url='https://github.com/BigPotatoPizzaHey/kgreb/',
     license='',
