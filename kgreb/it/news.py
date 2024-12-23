@@ -8,7 +8,7 @@ from datetime import datetime
 
 from bs4 import BeautifulSoup, Comment
 
-from ..util import commons
+from ..util import commons, exceptions
 
 
 @dataclass(init=True, repr=True)
@@ -40,11 +40,16 @@ def get_news_page(page: int = 1, category: int | Category = 7) -> NewsItem:
         category = category.id
 
     # Find the page corresponding to the category & post
-    text = requests.get(f"https://it.kegs.org.uk/",
+    response = requests.get(f"https://it.kegs.org.uk/",
                         params={
                             "cat": category,
                             "paged": page
-                        }).text
+                        })
+
+    if response.status_code == 404:
+        raise exceptions.NotFound(f"Could not find news page. Content: {response.content}")
+
+    text = response.text
     soup = BeautifulSoup(text, "html.parser")
 
     anchor = soup.find("a", {"rel": "bookmark"})
@@ -97,3 +102,15 @@ def get_news_page(page: int = 1, category: int | Category = 7) -> NewsItem:
         date,
         category_obj
     )
+
+def load_news_category(category: int | Category = 7, *, limit: int=10, offset: int=0):
+    pages = []
+    for page, _ in zip(*commons.generate_page_range(limit, offset, 1, 1)):
+        print(page)
+        try:
+            pages.append(get_news_page(page, category))
+
+        except exceptions.NotFound:
+            break
+
+    return pages

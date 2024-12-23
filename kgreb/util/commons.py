@@ -117,3 +117,38 @@ def consume_json(string: str, i: int = 0) -> str | float | int | dict | list | b
             return json.loads(json_text.strip())
 
     raise exceptions.UnclosedJSONError(f"Unclosed JSON string, read {json_text}")
+
+
+def generate_page_range(limit: int, offset: int, items_per_page: int, starting_page: int = 1) -> tuple[range, list[int]]:
+    """
+    Returns a page range (and first indexes per page) generated from a page range
+    :param limit: How many items to reach up to
+    :param offset: Starting item idx
+    :param items_per_page: Number of items per page
+    :param starting_page: Page with index '0' (usually 1 actually)
+    :return: tuple of page range and list of starting indexes for each page
+    """
+
+    if offset < 0:
+        raise ValueError(f"offset {offset!r} < 0")
+    if limit < 0:
+        raise ValueError(f"limit {limit!r} < 0")
+
+    # There are n items on display per page
+    # So the first page you need to view is {page 1 idx} + {offset} // {n}
+
+    # The final item to view is at idx {offset} + {limit} - 1
+    # (You have to -1 because the index starts at 0)
+    # So the page number for this is 1 + (offset + limit - 1) // n
+
+    # But this is a range so we have to add another 1 for the second argument
+
+    page_range = range(
+        starting_page + offset // items_per_page,
+        1 + starting_page + (offset + limit - 1) // items_per_page
+    )
+
+    return (
+        page_range,
+        [items_per_page * (i - starting_page) for i in page_range]
+    )
