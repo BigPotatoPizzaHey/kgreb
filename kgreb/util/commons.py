@@ -12,7 +12,10 @@ headers = {
 
 
 def webscrape_value(raw, text_before, text_after, cls: type = str, i1: int = 1, i2: int = 0) -> int | Any:
-    return cls(raw.split(text_before)[i1].split(text_after)[i2])
+    return cls(
+        raw.split(text_before)[i1] \
+            .split(text_after)[i2]
+    )
 
 
 def _read_json_number(string: str) -> float | int:
