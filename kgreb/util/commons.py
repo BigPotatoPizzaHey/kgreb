@@ -1,6 +1,8 @@
 import json
 from typing import Any, Final
 
+from bs4 import BeautifulSoup
+
 from . import exceptions
 
 DIGITS: Final = tuple("0123456789")
@@ -152,3 +154,10 @@ def generate_page_range(limit: int, offset: int, items_per_page: int, starting_p
         page_range,
         [items_per_page * (i - starting_page) for i in page_range]
     )
+
+def find_links(soup: BeautifulSoup) -> list[str]:
+    ret = []
+    for elem in soup.find_all("a"):
+        if "href" in elem.attrs:
+            ret.append(str(elem.attrs["href"]))
+    return ret
