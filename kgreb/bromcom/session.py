@@ -5,7 +5,6 @@ import requests
 import mimetypes
 from datetime import datetime, timedelta
 
-from beautifulprint import bprint
 from bs4 import BeautifulSoup, SoupStrainer
 
 from ..util import exceptions, commons
@@ -77,7 +76,6 @@ class Session:
                                       "type": 1
                                   })
         data = response.json()["table"]
-        bprint(data)
 
         lessons = []
         for lesson_data in data:
