@@ -9,3 +9,6 @@ class NotFound(Exception):
 
 class Unauthorised(Exception):
     pass
+
+class ServerError(Exception):
+    pass

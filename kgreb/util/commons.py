@@ -26,7 +26,12 @@ def webscrape_section(raw: str, before: str | int = '', after: str | int = '', c
         return val if isinstance(val, int) else len(val)
 
     before, after = _toint(before), _toint(after)
-    return cls(raw[before:-after])
+
+    if after == 0:
+        section = raw[before:]
+    else:
+        section = raw[before:-after]
+    return cls(section)
 
 
 def _read_json_number(string: str) -> float | int:
