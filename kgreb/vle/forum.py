@@ -3,7 +3,6 @@ from __future__ import annotations
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime
 
-import requests
 import dateparser
 from dataclasses import dataclass, field
 from bs4 import BeautifulSoup, NavigableString, PageElement
@@ -108,11 +107,11 @@ class Discussion:
                 break
 
     def update(self):
-        response = requests.get("https://vle.kegs.org.uk/mod/forum/discuss.php",
-                                params={
+        response = self._session.rq.get("https://vle.kegs.org.uk/mod/forum/discuss.php",
+                                        params={
                                     "d": self.id,
                                     "mode": 1
-                                }, headers=self._session.headers, cookies=self._session.cookies)
+                                })
 
         soup = BeautifulSoup(response.text, "html.parser")
 
@@ -153,8 +152,8 @@ class Forum:
     _session: session.Session = field(repr=False, default=None)
 
     def update_by_id(self):
-        response = requests.get("https://vle.kegs.org.uk/mod/forum/view.php",
-                                params={"f": self.id}, headers=self._session.headers, cookies=self._session.cookies)
+        response = self._session.rq.get("https://vle.kegs.org.uk/mod/forum/view.php",
+                                        params={"f": self.id})
         soup = BeautifulSoup(response.text, "html.parser")
 
         container = soup.find("div", {"role": "main"})

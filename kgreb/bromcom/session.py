@@ -67,7 +67,7 @@ class Session:
         if start_date is None:
             start_date = self.current_week.date
         if end_date is None:
-            end_date = start_date + timedelta(days=7)
+            end_date = start_date + timedelta(weeks=1)
 
         response = self._sess.get("https://www.bromcomvle.com/Timetable/GetTimeTable",
                                   params={

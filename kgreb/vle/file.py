@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os.path
 
-import requests
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -45,22 +44,22 @@ class File:
             # Get the folder contents
             return self._session.files_in_dir(self.filepath)
         else:
-            return requests.get(self.url, headers=self._session.headers, cookies=self._session.cookies).content
+            return self._session.rq.get(self.url).content
 
     def delete(self):
         """
         Deletes the file from the session's file manager
         """
-        requests.post("https://vle.kegs.org.uk/repository/draftfiles_ajax.php",
-                      params={"action": "delete"},
-                      data={
+        self._session.rq.post("https://vle.kegs.org.uk/repository/draftfiles_ajax.php",
+                              params={"action": "delete"},
+                              data={
                           "sesskey": self._session.sesskey,
 
                           "clientid": self._session.file_client_id,
                           "itemid": self._session.file_item_id,
                           "filename": self.filename,
                           "filepath": self.filepath
-                      }, cookies=self._session.cookies, headers=self._session.headers)
+                      })
         self._session.file_save_changes()
 
     @staticmethod

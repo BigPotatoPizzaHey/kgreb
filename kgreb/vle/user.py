@@ -42,9 +42,8 @@ class User:
         return self.image_url == "https://vle.kegs.org.uk/theme/image.php/trema/core/1585328846/u/f1"
 
     def update_from_id(self):
-        response = requests.get("https://vle.kegs.org.uk/user/profile.php",
-                                params={"id": self.id},
-                                headers=self._session.headers, cookies=self._session.cookies)
+        response = self._session.rq.get("https://vle.kegs.org.uk/user/profile.php",
+                                        params={"id": self.id})
         text = response.text
         soup = BeautifulSoup(text, "html.parser")
 
